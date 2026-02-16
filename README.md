@@ -36,6 +36,8 @@ Getting up and running:
 | [CS PugMod](https://github.com/SmileYzn/CS_PugMod-Archive) | 3.0.0 | Competitive PUG system (ready-up, map vote, knife round, LO3) |
 | [Advanced Quake Sounds](https://github.com/ClaudiuHKS/AdvancedQuakeSounds) | 8.0 | Multikill announcer sounds |
 | [RockTheVote Custom](https://forums.alliedmods.net/showthread.php?t=207493) | 1.8 | Players can vote to change the map early |
+| [Kreedz (xPaw)](https://github.com/xPaw/AMXX-Plugins/tree/master/plugins/Kreedz) | 1.0 | KZ timer, checkpoints, hook, leaderboards, anti-cheat |
+| [uSurf](http://forums.alliedmods.net/showthread.php?t=16418) | 5.2 | Surf management (checkpoints, timer, bunnyhop, semiclip) |
 
 All mod binaries are committed to the repo in `cstrike/`. Linux `.so` and Windows `.dll` binaries have different filenames so they coexist in the same directories.
 
@@ -49,6 +51,8 @@ The server starts in **vanilla** mode with only core plugins active (admin syste
 | GunGame | `exec gg.cfg` | Turbo GunGame — reversed weapon order (best to worst), instant respawn, knife steals a level | Custom GunGame maps (gg_simpsons, gg_buzz, etc.) |
 | Deathmatch | `exec dm.cfg` | Instant respawn FFA with weapon menu, Quake Sounds | Custom aim/fy maps (aim_map, fy_iceworld, etc.) |
 | Competitive (PUG) | `exec comp.cfg` | PugMod — players `.ready` up, vote map, pick teams, knife round, Live on 3 | Standard + custom competitive maps |
+| KZ (Kreedz) | `exec kz.cfg` | Kreedz climbing — timer, checkpoints, hook, noclip, leaderboards | KZ maps (kz_longjumps2, bkz_goldbhop, etc.) |
+| Surf | `exec surf.cfg` | Surf — checkpoints, timer, bunnyhop, auto-jump, semiclip, godmode | Surf maps (surf_ski_2, surf_egypt, etc.) |
 
 ### Changing modes
 
@@ -70,6 +74,8 @@ Each mode config executes a `custom_*.cfg` at the end for your overrides (hostna
 | Deathmatch | `custom_dm.cfg` |
 | Competitive (PUG) | `custom_comp.cfg` |
 | Vanilla | `custom_vanilla.cfg` |
+| KZ (Kreedz) | `custom_kz.cfg` |
+| Surf | `custom_surf.cfg` |
 
 See [Custom files](#custom-files) for details on how to use these.
 
@@ -141,6 +147,32 @@ Players can type these in chat (press `Y`):
 | `say /me` | Display your stats to all players |
 | `say rtv` | Rock the vote — vote to change the map early |
 
+**KZ mode commands:**
+
+| Command | Description |
+|---|---|
+| `say /cp` | Save a checkpoint |
+| `say /gc` | Teleport to last checkpoint |
+| `say /stuck` | Teleport to previous checkpoint |
+| `say /start` | Teleport to start position |
+| `say /timer` | Toggle timer display |
+| `say /pause` | Pause your timer and freeze |
+| `say /unpause` | Resume playing |
+| `say /noclip` | Toggle noclip (fly through walls) |
+| `say /hook` | Toggle grappling hook |
+| `say /spec` | Toggle spectator mode |
+| `say /invis` | Toggle player invisibility |
+
+**Surf mode commands:**
+
+| Command | Description |
+|---|---|
+| `say /checkpoint` | Save a checkpoint |
+| `say /gocheck` | Teleport to last checkpoint |
+| `say /timer` | Toggle speed timer |
+| `say /respawn` | Respawn at map start |
+| `say /surfhelp` | Show surf help MOTD |
+
 ## Developer setup
 
 ### Updating mod binaries
@@ -157,7 +189,18 @@ This downloads all framework binaries (Linux `.so` + Windows `.dll`) into `cstri
 
 AMX Mod X plugins are written as `.sma` source files and compiled to `.amxx` bytecode. The compiler (`amxxpc`) is included in the AMX Mod X download.
 
-**Linux:**
+**Docker (recommended — works on any OS including macOS ARM64):**
+```bash
+docker run --rm --platform linux/386 \
+  -v "$PWD/cstrike/addons/amxmodx:/amxmodx" \
+  -w /amxmodx/scripting \
+  debian:bullseye-slim \
+  ./amxxpc myplugin.sma -o../plugins/myplugin.amxx
+```
+
+The `amxxpc` compiler is a Linux x86 binary, so Docker is the easiest way to run it from macOS or Windows without WSL.
+
+**Linux (native):**
 ```bash
 cd cstrike/addons/amxmodx/scripting
 ./amxxpc myplugin.sma -o../plugins/myplugin.amxx
@@ -171,7 +214,7 @@ amxxpc.exe myplugin.sma -o..\plugins\myplugin.amxx
 
 The `-o` flag specifies where to output the compiled `.amxx` file. Plugin source files (`.sma`) go in `scripting/`, compiled plugins (`.amxx`) go in `plugins/`.
 
-Both compilers live in `cstrike/addons/amxmodx/scripting/` - `amxxpc` (Linux) and `amxxpc.exe` (Windows).
+Both compilers live in `cstrike/addons/amxmodx/scripting/` — `amxxpc` (Linux) and `amxxpc.exe` (Windows).
 
 ## Custom files
 
@@ -198,6 +241,8 @@ Then edit the files in `custom_files/` to your liking. For example, to set your 
 | `custom_files/custom_dm.cfg` | `hostname "My Server Deathmatch"` |
 | `custom_files/custom_comp.cfg` | `hostname "My Server PUG"` |
 | `custom_files/custom_vanilla.cfg` | `hostname "My Server"` |
+| `custom_files/custom_kz.cfg` | `hostname "My Server KZ"` |
+| `custom_files/custom_surf.cfg` | `hostname "My Server Surf"` |
 
 The `custom_files/` folder persists across server updates. The install scripts automatically merge its contents into `cstrike/`.
 
