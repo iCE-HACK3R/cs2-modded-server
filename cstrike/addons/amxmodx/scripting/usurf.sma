@@ -532,10 +532,11 @@ public EventDeathMsg()
 public Spawn(id)
 {
 	new CsTeams:Team = cs_get_user_team(id)
-	
+
 	if(is_user_connected(id) && (Team == CS_TEAM_T || Team == CS_TEAM_CT) && get_pcvar_num(p_On) && get_pcvar_num(p_Respawn) && g_SurfMap)
 	{
 		dllfunc(DLLFunc_Spawn,id)
+		set_pev(id,pev_health,50000.0)
 		set_task(0.2,"GiveSuit",id)
 		set_task(0.3,"GiveItems",id)
 	}
@@ -692,24 +693,36 @@ public ForwardTouch(Ptr,Ptd)
 {
 	if(!pev_valid(Ptr) || !pev_valid(Ptd) || !g_SurfMap || !get_pcvar_num(p_On) || !get_pcvar_num(p_Respawn))
 		return FMRES_IGNORED
-	
+
 	new id
 	if(is_user_alive(Ptr))
 		id = Ptr
 	else if(is_user_alive(Ptd))
 		id = Ptd
-	
+
 	if(!id)
 		return FMRES_IGNORED
-		
+
 	static Classname[33]
 	pev(id == Ptr ? Ptd : Ptr,pev_classname,Classname,32)
 	if(equali(Classname,"trigger_hurt"))
 	{
-		Spawn(id)
+		// Teleport to checkpoint if available (avoids random spawn + spawn animation freeze)
+		if(g_Origin[id][0] != 0.0)
+		{
+			engfunc(EngFunc_SetOrigin,id,g_Origin[id])
+			set_pev(id,pev_velocity,g_Velocity[id])
+			set_pev(id,pev_fixangle,1)
+			set_pev(id,pev_angles,g_Angles[id])
+			set_pev(id,pev_health,50000.0)
+		}
+		else
+		{
+			Spawn(id)
+		}
 		return FMRES_SUPERCEDE
 	}
-	
+
 	return FMRES_IGNORED
 }
 

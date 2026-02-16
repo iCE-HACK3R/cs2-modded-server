@@ -147,9 +147,9 @@ UTIL_DeathMSG( const id ) {
 }
 
 UTIL_ResetRoundTime( const id ) {
-	message_begin( MSG_ONE_UNRELIABLE, g_iMsgRoundTime, _, id );
-	write_short( 1 );
-	message_end( );
+	emessage_begin( MSG_ONE_UNRELIABLE, g_iMsgRoundTime, _, id );
+	ewrite_short( 1 );
+	emessage_end( );
 }
 
 UTIL_FlashLight( const id, const iStatus ) {

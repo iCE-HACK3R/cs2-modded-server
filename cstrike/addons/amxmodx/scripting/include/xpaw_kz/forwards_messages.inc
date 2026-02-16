@@ -35,17 +35,32 @@ public client_PreThink( id ) {
 		return;
 	}
 	
+	// Bunny hop: remove jump cooldown and auto-jump
+	set_pev( id, pev_fuser2, 0.0 );
+
+	if( pev( id, pev_button ) & IN_JUMP ) {
+		new iFlags = pev( id, pev_flags );
+		if( !( iFlags & FL_WATERJUMP ) && pev( id, pev_waterlevel ) < 2 && ( iFlags & FL_ONGROUND ) ) {
+			new Float:vVelocity[ 3 ];
+			pev( id, pev_velocity, vVelocity );
+			vVelocity[ 2 ] += 250.0;
+			set_pev( id, pev_velocity, vVelocity );
+			set_pev( id, pev_gaitsequence, 6 );
+		}
+	}
+
 	HookThink( id );
-	
+
 	if( flGameTime >= g_flLastThink[ id ] ) {
 		g_flLastThink[ id ] = flGameTime + 0.9;
-		
+
 		if( g_flStartTime[ id ] || g_flPaused[ id ] ) {
 			new iTime = 1 + floatround( ( g_flPaused[ id ] ? g_flPaused[ id ] : ( flGameTime - g_flStartTime[ id ] ) ) );
-			
-			message_begin( MSG_ONE_UNRELIABLE, g_iMsgRoundTime, _, id );
-			write_short( iTime );
-			message_end( );
+
+			// Use emessage to bypass the MessageRoundTime hook (which zeros all RoundTime msgs)
+			emessage_begin( MSG_ONE_UNRELIABLE, g_iMsgRoundTime, _, id );
+			ewrite_short( iTime );
+			emessage_end( );
 		}
 		
 		if( ( entity_get_int( id, EV_INT_movetype ) == MOVETYPE_NOCLIP ) )
