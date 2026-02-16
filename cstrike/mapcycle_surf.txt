@@ -1,5 +1,5 @@
 surf_egypt
 surf_ninja
-surf_greatriver_4
+surf_greatriver
 surf_ski_2
 surf_ski_5
