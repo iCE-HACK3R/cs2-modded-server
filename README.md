@@ -356,7 +356,7 @@ gcloud compute instances delete <instance-name> \
 
 ### Turn VM off at 3:30AM every day
 
-SSH into the VM, switch to root `sudo su`, open crontab `nano /etc/crontab` and append:
+SSH into the VM, switch to root `sudo su`, check what timezone your server is operating in `timedatectl` and then open crontab `nano /etc/crontab` and append (with any additions or subtractions due to the server timezone):
 
 ```
 30 3    * * *   root    shutdown -h now
