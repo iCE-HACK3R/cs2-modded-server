@@ -140,16 +140,20 @@ fi
 # CS 1.6 (HLDS, App ID 90) requires multiple SteamCMD runs to fully install
 echo "Downloading/updating CS 1.6 (HLDS)..."
 echo "Note: HLDS (App ID 90) may require multiple download attempts..."
-MAX_ATTEMPTS=5
-for i in $(seq 1 $MAX_ATTEMPTS); do
-	echo "SteamCMD attempt $i of $MAX_ATTEMPTS..."
+STEAMCMD_ATTEMPT=0
+while true; do
+	STEAMCMD_ATTEMPT=$((STEAMCMD_ATTEMPT + 1))
+	echo "SteamCMD attempt $STEAMCMD_ATTEMPT..."
 	/steamcmd/steamcmd.sh +login anonymous \
 		+force_install_dir ${INSTALL_DIR} \
 		+app_update 90 validate \
 		+quit
 	if [ "$?" -eq "0" ]; then
-		echo "SteamCMD attempt $i completed."
+		echo "SteamCMD update confirmed."
+		break
 	fi
+	echo "SteamCMD reported an issue or incomplete update. Retrying in 5 seconds..."
+	sleep 5
 done
 
 cd /home/${user}

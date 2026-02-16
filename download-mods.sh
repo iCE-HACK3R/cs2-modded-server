@@ -12,7 +12,7 @@
 #   - GunGame 2.13c
 #   - CSDM 2.1.2
 #   - Advanced Quake Sounds 8.0
-#   - CS_PugMod 2.0.6 (competitive PUG system)
+#   - CS_PugMod 3.0.0 (competitive PUG system)
 #
 # Linux .so and Windows .dll binaries have different filenames so they
 # coexist in the same directories. No separate windows/ folder needed.
@@ -217,7 +217,7 @@ echo "  -> Advanced Quake Sounds extracted (compile AQS.sma separately and commi
 # ============================================
 # 6. CS_PUGMOD 2.0.6 (Competitive PUG system)
 # ============================================
-echo "[6/6] Downloading CS_PugMod 2.0.6..."
+echo "[6/6] Downloading CS_PugMod 3.0.0..."
 
 PUGMOD_BASE="https://raw.githubusercontent.com/SmileYzn/CS_PugMod-Archive/master/addons/amxmodx"
 

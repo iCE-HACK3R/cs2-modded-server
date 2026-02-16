@@ -103,16 +103,20 @@ fi
 # CS 1.6 (HLDS, App ID 90) requires multiple SteamCMD runs to fully install
 echo "Downloading/updating CS 1.6 (HLDS)..."
 echo "Note: HLDS (App ID 90) may require multiple download attempts..."
-MAX_ATTEMPTS=5
-for i in $(seq 1 $MAX_ATTEMPTS); do
-	echo "SteamCMD attempt $i of $MAX_ATTEMPTS..."
+STEAMCMD_ATTEMPT=0
+while true; do
+	STEAMCMD_ATTEMPT=$((STEAMCMD_ATTEMPT + 1))
+	echo "SteamCMD attempt $STEAMCMD_ATTEMPT..."
 	/steamcmd/steamcmd.sh +login anonymous \
 		+force_install_dir ${INSTALL_DIR} \
 		+app_update 90 validate \
 		+quit
 	if [ "$?" -eq "0" ]; then
-		echo "SteamCMD attempt $i completed."
+		echo "SteamCMD update confirmed."
+		break
 	fi
+	echo "SteamCMD reported an issue or incomplete update. Retrying in 5 seconds..."
+	sleep 5
 done
 
 cd /home/${user}
@@ -120,11 +124,27 @@ cd /home/${user}
 echo "Downloading mod files..."
 MOD_URL="${MOD_URL:-https://github.com/kus/cs2-modded-server/archive/refs/heads/cs1.6.zip}"
 wget --quiet "${MOD_URL}" -O cs16-mod.zip
+if [ ! -f cs16-mod.zip ] || [ ! -s cs16-mod.zip ]; then
+	echo "ERROR: Failed to download mod files from ${MOD_URL}"
+	exit 1
+fi
 unzip -o -qq cs16-mod.zip
-cp -rlf cs2-modded-server-cs1.6/cstrike/ ${INSTALL_DIR}/cstrike/
-cp -R cs2-modded-server-cs1.6/custom_files/ ${INSTALL_DIR}/custom_files/
-cp -R cs2-modded-server-cs1.6/custom_files_example/ ${INSTALL_DIR}/custom_files_example/
+if [ ! -d "cs2-modded-server-cs1.6" ]; then
+	echo "ERROR: Expected directory cs2-modded-server-cs1.6 not found after unzip"
+	echo "Contents of extracted zip:"
+	ls -la
+	exit 1
+fi
+echo "  Copying mod cstrike/ files..."
+cp -RTf cs2-modded-server-cs1.6/cstrike/ ${INSTALL_DIR}/cstrike/
+echo "  Copying custom_files/..."
+mkdir -p ${INSTALL_DIR}/custom_files
+cp -RTf cs2-modded-server-cs1.6/custom_files/ ${INSTALL_DIR}/custom_files/
+echo "  Copying custom_files_example/..."
+mkdir -p ${INSTALL_DIR}/custom_files_example
+cp -RTf cs2-modded-server-cs1.6/custom_files_example/ ${INSTALL_DIR}/custom_files_example/
 rm -rf cs2-modded-server-cs1.6 cs16-mod.zip
+echo "  Mod files installed."
 
 echo "Merging in custom files from ${CUSTOM_FILES}"
 if [ -d "${INSTALL_DIR}/${CUSTOM_FILES}" ]; then

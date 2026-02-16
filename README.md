@@ -29,11 +29,11 @@ Getting up and running:
 
 | Mod | Version | Description |
 |---|---|---|
-| [Metamod](http://metamod.org/) | 1.20 | Plugin loader for HLDS |
+| [Metamod-P](https://github.com/Bots-United/metamod-p) | 1.21p38 | Plugin loader for HLDS |
 | [AMX Mod X](https://www.amxmodx.org/) | 1.9.0-git5259 | Server-side scripting framework |
-| [GunGame](https://forums.alliedmods.net/showthread.php?p=404554) | 2.13c | Turbo GunGame — level through weapons by getting kills |
-| [CSDM Sake](https://forums.alliedmods.net/showthread.php?t=196377) | 1.1e | Deathmatch with instant respawn and weapon menus |
-| [PugMod](https://github.com/SmileYzn/PugMod) | 0.5.4 | Competitive PUG system (ready-up, map vote, knife round, LO3) |
+| [GunGame](https://github.com/xLeviNx/GunGame) | 2.13c | Turbo GunGame — level through weapons by getting kills |
+| [CSDM Sake](https://github.com/s4ke/CSDMsake) | 1.1e | Deathmatch with instant respawn and weapon menus |
+| [CS PugMod](https://github.com/SmileYzn/CS_PugMod-Archive) | 3.0.0 | Competitive PUG system (ready-up, map vote, knife round, LO3) |
 | [Advanced Quake Sounds](https://github.com/ClaudiuHKS/AdvancedQuakeSounds) | 8.0 | Multikill announcer sounds |
 | [RockTheVote Custom](https://forums.alliedmods.net/showthread.php?t=207493) | 1.8 | Players can vote to change the map early |
 
@@ -382,18 +382,13 @@ Use [HLSW](http://www.hlsw.net/) or any RCON tool. Connect to `<IP>:27015` and e
 
 ### How do I add bots?
 
-In the server console or via RCON:
-```
-bot_add_ct
-bot_add_t
-bot_kick
-```
-
-Or set `bot_quota` in your `server.cfg` to automatically maintain a number of bots.
+To add bots to a Counter-Strike 1.6 dedicated server, you must use server-side modifications, as the base game does not include a native bot system for dedicated servers.
 
 ### The server won't show in the server browser
 
 Make sure you have a valid [Game Server Login Token](https://steamcommunity.com/dev/managegameservers) set via the `STEAM_ACCOUNT` environment variable or `sv_setsteamaccount` in your custom_server.cfg.
+
+[PodBot MM](https://github.com/APGRoboCop/podbot_mm): The most common choice for dedicated servers. It works through Metamod and is highly configurable. [Guide](https://forums.alliedmods.net/showthread.php?t=220798#Installation)
 
 ### SteamCMD fails to download all files
 
@@ -401,10 +396,8 @@ HLDS (App ID 90) has a known bug where it requires multiple SteamCMD runs to ful
 
 ## References
 
-- [LinuxGSM CS 1.6 Server](https://linuxgsm.com/servers/csserver/)
 - [Valve HLDS Documentation](https://developer.valvesoftware.com/wiki/Half-Life_Dedicated_Server)
 - [SteamCMD Documentation](https://developer.valvesoftware.com/wiki/SteamCMD)
-- [CS 1.6 Server Guide (Steam)](https://steamcommunity.com/sharedfiles/filedetails/?id=729345010)
 
 ## License
 
