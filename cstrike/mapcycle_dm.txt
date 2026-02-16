@@ -1,0 +1,9 @@
+aim_map
+aim_ak-colt
+aim_headshot
+aim_map_usp
+fy_iceworld
+fy_pool_day
+fy_snow
+aim_aztec
+aim_deagle
