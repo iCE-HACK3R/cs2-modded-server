@@ -144,9 +144,10 @@ STEAMCMD_ATTEMPT=0
 while true; do
 	STEAMCMD_ATTEMPT=$((STEAMCMD_ATTEMPT + 1))
 	echo "SteamCMD attempt $STEAMCMD_ATTEMPT..."
-	/steamcmd/steamcmd.sh +login anonymous \
-		+force_install_dir ${INSTALL_DIR} \
-		+app_update 90 validate \
+	/steamcmd/steamcmd.sh +force_install_dir ${INSTALL_DIR} \
+		+login anonymous \
+		+app_set_config 90 mod cstrike \
+		+app_update 90 -beta steam_legacy validate \
 		+quit
 	if [ "$?" -eq "0" ]; then
 		echo "SteamCMD update confirmed."
