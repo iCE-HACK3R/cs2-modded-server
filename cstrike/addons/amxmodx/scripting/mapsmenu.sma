@@ -42,18 +42,8 @@ public plugin_init()
 	register_menucmd(register_menuid("The winner: "), 3, "actionResult")
 
 	g_mapName=ArrayCreate(32);
-	
-	new maps_ini_file[64];
-	get_configsdir(maps_ini_file, charsmax(maps_ini_file));
-	format(maps_ini_file, charsmax(maps_ini_file), "%s/maps.ini", maps_ini_file);
 
-	if (!file_exists(maps_ini_file))
-		get_cvar_string("mapcyclefile", maps_ini_file, charsmax(maps_ini_file));
-		
-	if (!file_exists(maps_ini_file))
-		format(maps_ini_file, charsmax(maps_ini_file), "mapcycle.txt")
-	
-	load_settings(maps_ini_file)
+	reload_maps()
 
 	g_coloredMenus = colored_menus()
 }
@@ -270,6 +260,7 @@ public cmdVoteMapMenu(id, level, cid)
 		return PLUGIN_HANDLED
 	}
 
+	reload_maps()
 	g_voteSelectedNum[id] = 0
 
 	if (g_mapNums)
@@ -287,6 +278,8 @@ public cmdMapsMenu(id, level, cid)
 {
 	if (!cmd_access(id, level, cid, 1))
 		return PLUGIN_HANDLED
+
+	reload_maps()
 
 	if (g_mapNums)
 	{
@@ -534,6 +527,28 @@ stock bool:ValidMap(mapname[])
 	}
 	
 	return false;
+}
+
+reload_maps()
+{
+	ArrayClear(g_mapName)
+	g_mapNums = 0
+
+	// Use the active mapcyclefile (set by mode configs like gg.cfg, kz.cfg, etc.)
+	new maps_file[64]
+	get_cvar_string("mapcyclefile", maps_file, charsmax(maps_file))
+
+	if (!file_exists(maps_file))
+	{
+		// Fall back to configs/maps.ini
+		get_configsdir(maps_file, charsmax(maps_file))
+		format(maps_file, charsmax(maps_file), "%s/maps.ini", maps_file)
+	}
+
+	if (!file_exists(maps_file))
+		format(maps_file, charsmax(maps_file), "mapcycle.txt")
+
+	load_settings(maps_file)
 }
 
 load_settings(filename[])
