@@ -257,22 +257,26 @@ public FwdHamPlayerSpawnPre( const id )
 public FwdHamPlayerSpawn( const id ) {
 	if( !is_user_alive( id ) )
 		return;
-	
+
 	if( g_iLeet == id )
 		SetLeetRender( id );
-	
+
 	if( !g_bBetaMsg[ id ] )
 		set_task( 3.0, "TaskHud", id );
-	
+
 	g_iSpectateId[ id ] = 0;
-	
-	if( g_bAutoHeal )
-		set_user_health( id, 50000 );
-	
+
+	// Always give high HP to survive kill triggers and fall damage
+	set_user_health( id, 50000 );
+
+	// Strip weapons and give clean loadout (prevents floating weapon clutter)
+	strip_user_weapons( id );
+	give_item( id, "weapon_knife" );
+	give_item( id, "weapon_usp" );
+	cs_set_user_bpammo( id, CSW_USP, 100 );
+
 	set_pdata_int( id, m_iRadiosLeft, 0 );
-	
-	//cs_set_user_bpammo( id, CSW_USP, 100 );
-	
+
 	if( g_bAdmin[ id ] )
 		cs_set_user_model( id, "vip" );
 	
@@ -332,19 +336,29 @@ public TaskHud( const id ) {
 public FwdHamPlayerKilled( const id ) {
 	CmdHookOff( id );
 	UTIL_DeathMSG( id );
-	
+
 	if( cs_get_user_team( id ) == CS_TEAM_CT ) {
 		if( !g_iCheckPoints[ id ] )
 			CheatDetect( id, "Death" );
-		
+
 		entity_set_int( id, EV_INT_deadflag, DEAD_RESPAWNABLE );
+
+		// Auto-respawn after a short delay (DEAD_RESPAWNABLE alone is unreliable in CS 1.6)
+		set_task( 0.75, "TaskRespawnPlayer", id + 500 );
 	}
-	
+
 	// Semiclip fix
 	get_players( g_iPlayers, g_iNum, "a" );
-	
+
 	for( new i = 0; i < g_iNum; i++ )
 		set_pev( g_iPlayers[ i ], pev_solid, SOLID_BBOX );
+}
+
+public TaskRespawnPlayer( taskid ) {
+	new id = taskid - 500;
+
+	if( is_user_connected( id ) && !is_user_alive( id ) && cs_get_user_team( id ) == CS_TEAM_CT )
+		ExecuteHamB( Ham_CS_RoundRespawn, id );
 }
 
 // MESSAGE HOOKS

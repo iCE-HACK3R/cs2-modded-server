@@ -336,6 +336,16 @@ public plugin_init( ) {
 	g_iFwdTimerStart    = CreateMultiForward( "kz_timer_start",    ET_IGNORE, FP_CELL );
 	g_iFwdTimerStop     = CreateMultiForward( "kz_timer_stop",     ET_IGNORE, FP_CELL, FP_FLOAT );
 	g_iFwdCheatDetected = CreateMultiForward( "kz_cheat_detected", ET_IGNORE, FP_CELL );
+
+	// Periodic weaponbox cleanup (prevents floating weapon clutter)
+	set_task( 5.0, "TaskCleanWeapons", _, _, _, "b" );
+}
+
+public TaskCleanWeapons( ) {
+	new iEntity = g_iMaxPlayers + 1;
+
+	while( ( iEntity = find_ent_by_class( iEntity, "weaponbox" ) ) > 0 )
+		remove_entity( iEntity );
 }
 
 public plugin_end( ) {
