@@ -703,10 +703,19 @@ public ForwardTouch(Ptr,Ptd)
 	if(!id)
 		return FMRES_IGNORED
 
+	new Other = (id == Ptr ? Ptd : Ptr)
+
 	static Classname[33]
-	pev(id == Ptr ? Ptd : Ptr,pev_classname,Classname,32)
+	pev(Other,pev_classname,Classname,32)
 	if(equali(Classname,"trigger_hurt"))
 	{
+		// Only handle lethal trigger_hurts (positive damage), not healing ones
+		// (e.g. the kreedz plugin creates a map-wide -50 dmg trigger_hurt for autoheal)
+		new Float:fDmg
+		pev(Other,pev_dmg,fDmg)
+		if(fDmg <= 0.0)
+			return FMRES_IGNORED
+
 		// Teleport to checkpoint if available (avoids random spawn + spawn animation freeze)
 		if(g_Origin[id][0] != 0.0)
 		{

@@ -59,9 +59,6 @@ stock Handle:SQL_MakeTupleByCvar( pSqlHost, pSqlUser, pSqlPass, pSqlDb ) {
 public plugin_init( ) {
 	register_plugin( "Kreedz", "1.0", "xPaw" );
 	
-	set_cvar_num( "mp_flashlight", 1 );
-	set_cvar_string( "humans_join_team", "ct" );
-	
 	g_tRestrictedWeapons = TrieCreate( );
 	g_tSounds     = TrieCreate( );
 	g_tStarts     = TrieCreate( );
@@ -230,37 +227,6 @@ public plugin_init( ) {
 	for( i = 0; i < sizeof szStops; i++ )
 		TrieSetCell( g_tStops, szStops[ i ], 1 );
 	
-	// Silent Doors
-	i = g_iMaxPlayers + 1;
-	
-	new const szNull[ ] = "common/null.wav";
-	
-	while( ( i = find_ent_by_class( i, "func_door" ) ) ) {
-		if( entity_get_float( i, EV_FL_dmg ) < -999.0 ) {
-			entity_set_string( i, EV_SZ_noise1, szNull );
-			entity_set_string( i, EV_SZ_noise2, szNull );
-			entity_set_string( i, EV_SZ_noise3, szNull );
-			
-			g_bAutoHeal = true;
-		}
-	}
-	
-	// Autoheal
-	if( !g_bAutoHeal ) {
-		i = create_entity( "trigger_hurt" );
-		
-		if( is_valid_ent( i ) ) {
-			DispatchKeyValue( i, "classname", "trigger_hurt" );
-			DispatchKeyValue( i, "damagetype", "1024" );
-			DispatchKeyValue( i, "dmg", "-50" );
-			
-			DispatchSpawn( i );
-			
-			entity_set_size( i, Float:{ -4096.0, -4096.0, -4096.0 }, Float:{ 4096.0, 4096.0, 4096.0 } );
-			entity_set_int( i, EV_INT_solid, SOLID_TRIGGER );
-		}
-	}
-	
 	// No weapons shoot
 	RegisterHam( Ham_Weapon_SecondaryAttack, "weapon_m4a1", "FwdHamItemDeploy", 1 );
 	
@@ -313,25 +279,7 @@ public plugin_init( ) {
 	
 	LoadLeetClimber( );
 	LoadStartLocation( );
-	FindWaterEntities( );
-	
-	// Delete entities
-	new const szDeleteEntities[ ][ ] = {
-		"func_buyzone", "env_sound", "info_map_parameters", "info_player_deathmatch",
-		"player_weaponstrip", "game_player_equip", "armoury_entity", "item_longjump"
-	};
-	
-	new iEntity;
-	for( i = 0; i < sizeof szDeleteEntities; i++ ) {
-		iEntity = g_iMaxPlayers + 1;
-		
-		while( ( iEntity = find_ent_by_class( iEntity, szDeleteEntities[ i ] ) ) > 0 ) {
-			if( !i && entity_get_int( i, EV_INT_iuser1 ) == 1337 ) continue;
-			
-			remove_entity( iEntity );
-		}
-	}
-	
+
 	// Register forwards
 	g_iFwdTimerStart    = CreateMultiForward( "kz_timer_start",    ET_IGNORE, FP_CELL );
 	g_iFwdTimerStop     = CreateMultiForward( "kz_timer_stop",     ET_IGNORE, FP_CELL, FP_FLOAT );
@@ -346,6 +294,62 @@ public TaskCleanWeapons( ) {
 
 	while( ( iEntity = find_ent_by_class( iEntity, "weaponbox" ) ) > 0 )
 		remove_entity( iEntity );
+}
+
+// World modifications - only runs for the active mode (after amxx.cfg pauses inactive plugins)
+public plugin_cfg( ) {
+	set_cvar_num( "mp_flashlight", 1 );
+	set_cvar_string( "humans_join_team", "ct" );
+
+	// Silent Doors
+	new i = g_iMaxPlayers + 1;
+
+	new const szNull[ ] = "common/null.wav";
+
+	while( ( i = find_ent_by_class( i, "func_door" ) ) ) {
+		if( entity_get_float( i, EV_FL_dmg ) < -999.0 ) {
+			entity_set_string( i, EV_SZ_noise1, szNull );
+			entity_set_string( i, EV_SZ_noise2, szNull );
+			entity_set_string( i, EV_SZ_noise3, szNull );
+
+			g_bAutoHeal = true;
+		}
+	}
+
+	// Autoheal
+	if( !g_bAutoHeal ) {
+		i = create_entity( "trigger_hurt" );
+
+		if( is_valid_ent( i ) ) {
+			DispatchKeyValue( i, "classname", "trigger_hurt" );
+			DispatchKeyValue( i, "damagetype", "1024" );
+			DispatchKeyValue( i, "dmg", "-50" );
+
+			DispatchSpawn( i );
+
+			entity_set_size( i, Float:{ -4096.0, -4096.0, -4096.0 }, Float:{ 4096.0, 4096.0, 4096.0 } );
+			entity_set_int( i, EV_INT_solid, SOLID_TRIGGER );
+		}
+	}
+
+	FindWaterEntities( );
+
+	// Delete entities
+	new const szDeleteEntities[ ][ ] = {
+		"func_buyzone", "env_sound", "info_map_parameters", "info_player_deathmatch",
+		"player_weaponstrip", "game_player_equip", "armoury_entity", "item_longjump"
+	};
+
+	new iEntity;
+	for( i = 0; i < sizeof szDeleteEntities; i++ ) {
+		iEntity = g_iMaxPlayers + 1;
+
+		while( ( iEntity = find_ent_by_class( iEntity, szDeleteEntities[ i ] ) ) > 0 ) {
+			if( !i && entity_get_int( iEntity, EV_INT_iuser1 ) == 1337 ) continue;
+
+			remove_entity( iEntity );
+		}
+	}
 }
 
 public plugin_end( ) {
