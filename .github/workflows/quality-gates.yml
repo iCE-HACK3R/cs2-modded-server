@@ -44,7 +44,20 @@ jobs:
         run: python -m compileall -q scripts/dependency_manager.py tests/test_dependency_manager.py
 
       - name: Run adversarial tests
-        run: python -m unittest discover -s tests -v
+        shell: bash
+        run: |
+          set +e
+          python -m unittest discover -s tests -v 2>&1 | tee unittest.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status != 0 )); then
+            message=$(tail -n 100 unittest.log)
+            message=${message//'%'/'%25'}
+            message=${message//$'\r'/'%0D'}
+            message=${message//$'\n'/'%0A'}
+            echo "::error title=Adversarial test failure::$message"
+            exit "$status"
+          fi
 
       - name: Validate dependency lock
         run: python scripts/dependency_manager.py validate
