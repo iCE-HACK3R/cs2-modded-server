@@ -469,7 +469,7 @@ def open_directory_at(root_fd: int, parts: tuple[str, ...], *, create: bool = Fa
     try:
         for part in parts:
             try:
-                child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor)
+                child = open_child_directory_at(descriptor, part)
             except FileNotFoundError:
                 if not create:
                     raise
@@ -477,12 +477,25 @@ def open_directory_at(root_fd: int, parts: tuple[str, ...], *, create: bool = Fa
                     os.mkdir(part, 0o755, dir_fd=descriptor)
                 except FileExistsError:
                     pass
-                child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor)
+                child = open_child_directory_at(descriptor, part)
             os.close(descriptor)
             descriptor = child
         yield descriptor
     finally:
         os.close(descriptor)
+
+
+def open_child_directory_at(parent_fd: int, name: str) -> int:
+    try:
+        return os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+    except OSError as exc:
+        try:
+            metadata = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        except OSError:
+            raise exc
+        if stat.S_ISLNK(metadata.st_mode):
+            raise DependencyError(f"target path contains a symlink or junction: {name}") from exc
+        raise
 
 
 def entry_exists_at(parent_fd: int, name: str) -> bool:

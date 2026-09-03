@@ -107,15 +107,15 @@
   "GameModes": {
     "Style": "center",
     "Default": {
-      "Name": "Casual",
-      "Config": "casual.cfg",
-      "DefaultMap": null,
+      "Name": "Practice Mode",
+      "Config": "prac.cfg",
+      "DefaultMap": "de_dust2",
       "MapGroups": [
-        "mg_active",
         "mg_comp"
       ]
     },
     "MapGroupFile": "gamemodes_server.txt",
+    "ApprovedPluginPaths": [],
     "List": [
       {
         "Name": "Gun Game",

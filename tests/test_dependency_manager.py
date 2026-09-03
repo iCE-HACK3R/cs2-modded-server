@@ -26,6 +26,8 @@ SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "dependencies-lo
 WINDOWS_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "win.bat"
 LINUX_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "install.sh"
 DOCKER_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "install_docker.sh"
+GAME_ROOT = Path(__file__).resolve().parents[1] / "game" / "csgo"
+MODE_CONFIG_PATH = GAME_ROOT / "addons" / "counterstrikesharp" / "configs" / "plugins" / "GameModeManager" / "GameModeManager.json"
 
 
 class DependencyManagerTests(unittest.TestCase):
@@ -51,6 +53,45 @@ class DependencyManagerTests(unittest.TestCase):
     def test_repository_schema_is_valid_json(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
+    def test_advertised_modes_are_deterministically_available(self) -> None:
+        config = json.loads(MODE_CONFIG_PATH.read_text(encoding="utf-8"))
+        game_modes = config["GameModes"]
+        approved = {path.replace("\\", "/") for path in game_modes["ApprovedPluginPaths"]}
+        locked_files = {
+            path
+            for dependency in self.lock["dependencies"]
+            for asset in dependency["assets"]
+            for path in asset["expectedPaths"]
+        }
+        self.assertEqual(
+            set(),
+            {f"addons/counterstrikesharp/{path}" for path in approved} - locked_files,
+            "repository plugin approvals must be backed by immutable lock assets",
+        )
+
+        plugin_load = re.compile(
+            r'^\s*css_plugins\s+load\s+(?:"([^"]+)"|\'([^\']+)\'|(\S+))\s*(?://.*)?$',
+            re.IGNORECASE,
+        )
+        available_modes: set[str] = set()
+        for mode in game_modes["List"]:
+            cfg_path = GAME_ROOT / "cfg" / mode["Config"]
+            self.assertTrue(cfg_path.is_file(), f"mode {mode['Name']} references missing cfg {mode['Config']}")
+            required_plugins: set[str] = set()
+            for line_number, line in enumerate(cfg_path.read_text(encoding="utf-8").splitlines(), 1):
+                stripped = line.lstrip()
+                if not re.match(r"^css_plugins\s+load(?:\s|$)", stripped, re.IGNORECASE):
+                    continue
+                match = plugin_load.fullmatch(line)
+                self.assertIsNotNone(match, f"malformed plugin load in {mode['Config']}:{line_number}")
+                assert match is not None
+                required_plugins.add(next(value for value in match.groups() if value).replace("\\", "/"))
+            if required_plugins <= approved:
+                available_modes.add(mode["Name"])
+
+        self.assertEqual({"Practice Mode", "Hide N Seek"}, available_modes)
+        self.assertIn(game_modes["Default"]["Name"], available_modes, "default mode must be production-ready")
 
     def test_windows_installer_uses_locked_dependencies_before_custom_overlays(self) -> None:
         installer = WINDOWS_INSTALLER_PATH.read_text(encoding="utf-8").lower()
