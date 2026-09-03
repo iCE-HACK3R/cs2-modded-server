@@ -539,7 +539,13 @@ def relative_exists_at(root_fd: int, relative: str) -> bool:
 def create_seed_at(source: Path, target_root_fd: int, relative: str, journal: list[tuple[str, int, int]]) -> bool:
     parts = PurePosixPath(relative).parts
     with open_directory_at(target_root_fd, parts[:-1], create=True) as parent_fd:
-        if entry_exists_at(parent_fd, parts[-1]):
+        try:
+            existing = os.stat(parts[-1], dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            existing = None
+        if existing is not None and stat.S_ISLNK(existing.st_mode):
+            raise DependencyError(f"target path contains a symlink or junction: {relative}")
+        if existing is not None:
             return False
         temporary = f".cs2-seed-{os.getpid()}-{os.urandom(8).hex()}"
         descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=parent_fd)
