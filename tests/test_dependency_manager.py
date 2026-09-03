@@ -266,14 +266,19 @@ class DependencyManagerTests(unittest.TestCase):
             target = root / "target"
             dependency = {"id": "test", "name": "Test", "version": "1"}
 
+            copy_primitive = "copyfileobj" if manager.os.name == "posix" else "copy2"
+            real_copy = getattr(manager.shutil, copy_primitive)
+
             def failing_copy(source: object, destination: object, *args: object) -> None:
                 if manager.os.name == "posix":
+                    if not isinstance(getattr(destination, "name", None), int):
+                        real_copy(source, destination, *args)
+                        return
                     destination.write(b"partial")  # type: ignore[union-attr]
                 else:
                     Path(destination).write_text("partial", encoding="utf-8")  # type: ignore[arg-type]
                 raise OSError("injected seed copy failure")
 
-            copy_primitive = "copyfileobj" if manager.os.name == "posix" else "copy2"
             with mock.patch.object(manager.shutil, copy_primitive, side_effect=failing_copy):
                 with self.assertRaisesRegex(manager.DependencyError, "rolled back"):
                     manager.install_asset(archive, target, dependency, asset, keep_backup=False)
