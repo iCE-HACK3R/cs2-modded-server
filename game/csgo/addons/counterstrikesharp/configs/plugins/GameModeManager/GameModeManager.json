@@ -320,7 +320,7 @@
       },
       {
         "Name": "Casual (1.6)",
-        "Config": "casual-1.6.cfg",
+        "Config": "Casual-1.6.cfg",
         "DefaultMap": "3201205818",
         "MapGroups": [
           "mg_casual-1.6"
