@@ -1,2 +1,6 @@
 .github
+.git
+.venv
+.cache
+__pycache__
 custom_files_example

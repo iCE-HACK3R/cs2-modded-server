@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -Eeo pipefail
+
 # Variables
 user="steam"
 BRANCH="master"
@@ -84,8 +86,7 @@ if [ ! -z "$DUCK_TOKEN" ]; then
 fi
 
 echo "Checking $user user exists..."
-getent passwd ${user} 2 >/dev/null &>1
-if [ "$?" -ne "0" ]; then
+if ! getent passwd "${user}" >/dev/null 2>&1; then
     echo "Adding $user user..."
     addgroup ${user} &&
         adduser --system --home /home/${user} --shell /bin/false --ingroup ${user} ${user} &&
@@ -126,13 +127,13 @@ cd /home/${user} || exit
 # Set up steam client libraries
 # 32-bit
 mkdir -p /home/${user}/.steam/sdk32/
-rm /home/${user}/.steam/sdk32/steamclient.so
+rm -f /home/${user}/.steam/sdk32/steamclient.so
 cp -v /steamcmd/linux32/steamclient.so /home/${user}/.steam/sdk32/steamclient.so || {
 	echo "ERROR: Failed to copy 32-bit libraries"
 }
 # 64-bit
 mkdir -p /home/${user}/.steam/sdk64/
-rm /home/${user}/.steam/sdk64/steamclient.so
+rm -f /home/${user}/.steam/sdk64/steamclient.so
 cp -v /steamcmd/linux64/steamclient.so /home/${user}/.steam/sdk64/steamclient.so || {
 	echo "ERROR: Failed to copy 64-bit libraries"
 }
@@ -143,6 +144,19 @@ cp -v /home/${user}/cs2/game/bin/linuxsteamrt64/*.so  /home/${user}/cs2/game/csg
 
 echo "Installing mods"
 cp -R /home/cs2-modded-server/game/csgo/ /home/${user}/cs2/game/
+
+echo "Installing checksum-locked dependencies"
+python3 /home/cs2-modded-server/scripts/dependency_manager.py validate
+python3 /home/cs2-modded-server/scripts/dependency_manager.py install counterstrikesharp \
+    --platform linux-x64 \
+    --variant with-runtime \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo
+python3 /home/cs2-modded-server/scripts/dependency_manager.py install cs2-customvotes \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo
 
 echo "Merging in custom files"
 cp -RT /home/custom_files/ /home/${user}/cs2/game/csgo/

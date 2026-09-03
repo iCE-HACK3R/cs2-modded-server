@@ -1,5 +1,8 @@
 FROM registry.gitlab.steamos.cloud/steamrt/sniper/platform:latest-container-runtime-depot
 
+LABEL org.opencontainers.image.source="https://github.com/iCE-HACK3R/cs2-modded-server" \
+    org.opencontainers.image.description="CS2 modded dedicated server"
+
 USER root
 
 RUN apt-get update --fix-missing \
@@ -7,6 +10,7 @@ RUN apt-get update --fix-missing \
     dnsutils \
     git-all \
     lib32z1=1:1.2.11.dfsg-2+deb11u2 \
+    python3 \
     wget=1.21-1+deb11u1 \
     && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
     && dpkg-reconfigure --frontend=noninteractive locales
@@ -39,6 +43,10 @@ COPY install_docker.sh \
     start.sh \
     stop.sh \
     $SRC_DIR
+
+COPY dependencies.lock.json $SRC_DIR/dependencies.lock.json
+COPY schemas $SRC_DIR/schemas
+COPY scripts/dependency_manager.py $SRC_DIR/scripts/dependency_manager.py
 
 COPY game/csgo $SRC_DIR/game/csgo
 

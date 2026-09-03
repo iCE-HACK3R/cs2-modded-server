@@ -1,0 +1,201 @@
+{
+  "$schema": "./schemas/dependencies-lock.schema.json",
+  "schemaVersion": 1,
+  "allowedHosts": [
+    "github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com"
+  ],
+  "dependencies": [
+    {
+      "id": "counterstrikesharp",
+      "name": "CounterStrikeSharp",
+      "version": "1.0.373",
+      "upstream": "https://github.com/roflmuffin/CounterStrikeSharp",
+      "license": {
+        "spdx": "GPL-3.0-only",
+        "url": "https://github.com/roflmuffin/CounterStrikeSharp/blob/v1.0.373/LICENSE",
+        "notice": "GPL-3.0-only with the upstream special exception for derivative plugins and extensions. Preserve LICENSE, LICENSE.GPL3, and LICENSE.MIT from upstream distributions/source."
+      },
+      "required": true,
+      "modes": ["all"],
+      "assets": [
+        {
+          "platform": "linux-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.373/counterstrikesharp-linux-1.0.373.zip",
+          "sha256": "c1d64b8ea24ea4306d9db2ec968cf69cada18744cb1bd4009256acec4aefd942",
+          "size": 3868757,
+          "archive": "zip",
+          "expandedSizeLimit": 33554432,
+          "expectedPaths": [
+            "addons/counterstrikesharp/api/CounterStrikeSharp.API.dll",
+            "addons/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so",
+            "addons/counterstrikesharp/gamedata/gamedata.json",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/api",
+            "addons/counterstrikesharp/bin",
+            "addons/counterstrikesharp/gamedata",
+            "addons/counterstrikesharp/lang",
+            "addons/counterstrikesharp/source",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/admin_groups.example.json",
+            "addons/counterstrikesharp/configs/admin_overrides.example.json",
+            "addons/counterstrikesharp/configs/admins.example.json",
+            "addons/counterstrikesharp/configs/core.example.json"
+          ]
+        },
+        {
+          "platform": "linux-x64",
+          "variant": "with-runtime",
+          "url": "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.373/counterstrikesharp-with-runtime-linux-1.0.373.zip",
+          "sha256": "2b9b64069c06c78bbb1ad92d59f165b32c107845c18eb7ca6e5c808a26fb6906",
+          "size": 52364329,
+          "archive": "zip",
+          "expandedSizeLimit": 201326592,
+          "expectedPaths": [
+            "addons/counterstrikesharp/api/CounterStrikeSharp.API.dll",
+            "addons/counterstrikesharp/bin/linuxsteamrt64/counterstrikesharp.so",
+            "addons/counterstrikesharp/dotnet/dotnet",
+            "addons/counterstrikesharp/gamedata/gamedata.json",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/api",
+            "addons/counterstrikesharp/bin",
+            "addons/counterstrikesharp/dotnet",
+            "addons/counterstrikesharp/gamedata",
+            "addons/counterstrikesharp/lang",
+            "addons/counterstrikesharp/source",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/admin_groups.example.json",
+            "addons/counterstrikesharp/configs/admin_overrides.example.json",
+            "addons/counterstrikesharp/configs/admins.example.json",
+            "addons/counterstrikesharp/configs/core.example.json"
+          ]
+        },
+        {
+          "platform": "windows-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.373/counterstrikesharp-windows-1.0.373.zip",
+          "sha256": "ef8fb43f7ba809d32885230a9123fc93bbd705ae8e1fb4c07962d656dc7d2b75",
+          "size": 3155774,
+          "archive": "zip",
+          "expandedSizeLimit": 33554432,
+          "expectedPaths": [
+            "addons/counterstrikesharp/api/CounterStrikeSharp.API.dll",
+            "addons/counterstrikesharp/bin/win64/counterstrikesharp.dll",
+            "addons/counterstrikesharp/gamedata/gamedata.json",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/api",
+            "addons/counterstrikesharp/bin",
+            "addons/counterstrikesharp/gamedata",
+            "addons/counterstrikesharp/lang",
+            "addons/counterstrikesharp/source",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/admin_groups.example.json",
+            "addons/counterstrikesharp/configs/admin_overrides.example.json",
+            "addons/counterstrikesharp/configs/admins.example.json",
+            "addons/counterstrikesharp/configs/core.example.json"
+          ]
+        },
+        {
+          "platform": "windows-x64",
+          "variant": "with-runtime",
+          "url": "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.373/counterstrikesharp-with-runtime-windows-1.0.373.zip",
+          "sha256": "16d1db8e48ccea5ef3f030a1841575d6c006345c6920e4f6691135ef8907e695",
+          "size": 51951728,
+          "archive": "zip",
+          "expandedSizeLimit": 201326592,
+          "expectedPaths": [
+            "addons/counterstrikesharp/api/CounterStrikeSharp.API.dll",
+            "addons/counterstrikesharp/bin/win64/counterstrikesharp.dll",
+            "addons/counterstrikesharp/dotnet/dotnet.exe",
+            "addons/counterstrikesharp/gamedata/gamedata.json",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/api",
+            "addons/counterstrikesharp/bin",
+            "addons/counterstrikesharp/dotnet",
+            "addons/counterstrikesharp/gamedata",
+            "addons/counterstrikesharp/lang",
+            "addons/counterstrikesharp/source",
+            "addons/metamod/counterstrikesharp.vdf"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/admin_groups.example.json",
+            "addons/counterstrikesharp/configs/admin_overrides.example.json",
+            "addons/counterstrikesharp/configs/admins.example.json",
+            "addons/counterstrikesharp/configs/core.example.json"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cs2-customvotes",
+      "name": "CS2-CustomVotes",
+      "version": "1.1.4",
+      "upstream": "https://github.com/imi-tat0r/CS2-CustomVotes",
+      "license": {
+        "spdx": "MIT",
+        "url": "https://github.com/imi-tat0r/CS2-CustomVotes/blob/v1.1.4/LICENSE",
+        "notice": "Copyright (c) 2024 imi-tat0r; preserve the upstream MIT license notice when redistributing."
+      },
+      "required": false,
+      "modes": ["map-votes", "mode-votes", "setting-votes"],
+      "assets": [
+        {
+          "platform": "linux-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/imi-tat0r/CS2-CustomVotes/releases/download/v1.1.4/CS2-CustomVotes-1.1.4-c494e8a.zip",
+          "sha256": "e9d25c7ebcdb60a001687c02d664175e089d8e95e6b197fd126f1119018c54c2",
+          "size": 65353,
+          "archive": "zip",
+          "expandedSizeLimit": 4194304,
+          "expectedPaths": [
+            "addons/counterstrikesharp/plugins/CS2-CustomVotes/CS2-CustomVotes.dll",
+            "addons/counterstrikesharp/shared/CS2-CustomVotes.Shared/CS2-CustomVotes.Shared.dll"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/plugins/CS2-CustomVotes",
+            "addons/counterstrikesharp/shared/CS2-CustomVotes.Shared"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/plugins/CS2-CustomVotes/CS2-CustomVotes.json"
+          ]
+        },
+        {
+          "platform": "windows-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/imi-tat0r/CS2-CustomVotes/releases/download/v1.1.4/CS2-CustomVotes-1.1.4-c494e8a.zip",
+          "sha256": "e9d25c7ebcdb60a001687c02d664175e089d8e95e6b197fd126f1119018c54c2",
+          "size": 65353,
+          "archive": "zip",
+          "expandedSizeLimit": 4194304,
+          "expectedPaths": [
+            "addons/counterstrikesharp/plugins/CS2-CustomVotes/CS2-CustomVotes.dll",
+            "addons/counterstrikesharp/shared/CS2-CustomVotes.Shared/CS2-CustomVotes.Shared.dll"
+          ],
+          "managedPaths": [
+            "addons/counterstrikesharp/plugins/CS2-CustomVotes",
+            "addons/counterstrikesharp/shared/CS2-CustomVotes.Shared"
+          ],
+          "seedPaths": [
+            "addons/counterstrikesharp/configs/plugins/CS2-CustomVotes/CS2-CustomVotes.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

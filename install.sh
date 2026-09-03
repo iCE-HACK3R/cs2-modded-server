@@ -57,6 +57,15 @@ enable_unprivileged_namespaces() {
 # Variables
 user="steam"
 BRANCH="master"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DOWNLOADED_MOD_ROOT=""
+
+cleanup() {
+    if [ -n "$DOWNLOADED_MOD_ROOT" ]; then
+        rm -rf -- "$DOWNLOADED_MOD_ROOT"
+    fi
+}
+trap cleanup EXIT
 
 # Check if MOD_BRANCH is set and not empty
 if [ -n "$MOD_BRANCH" ]; then
@@ -182,12 +191,6 @@ else
 	exit 1
 fi
 
-# Download latest stop script
-curl -s -H "Cache-Control: no-cache" -o "stop.sh" "https://raw.githubusercontent.com/kus/cs2-modded-server/${BRANCH}/stop.sh" && chmod +x stop.sh
-
-# Download latest start script
-curl -s -H "Cache-Control: no-cache" -o "start.sh" "https://raw.githubusercontent.com/kus/cs2-modded-server/${BRANCH}/start.sh" && chmod +x start.sh
-
 PUBLIC_IP=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
 
 if [ -z "$PUBLIC_IP" ]; then
@@ -276,28 +279,68 @@ if [ "${DISTRO_OS}" == "Ubuntu" ]; then
 	fi
 fi
 
-# Delete addons folder as if we remove something later in git it won't get deleted
-rm -r /home/${user}/cs2/game/csgo/addons
+MOD_ROOT=""
+if [ -f "${SCRIPT_DIR}/dependencies.lock.json" ] && [ -d "${SCRIPT_DIR}/game/csgo" ]; then
+    MOD_ROOT="${SCRIPT_DIR}"
+else
+    if [ -z "${MOD_ARCHIVE_SHA256:-}" ]; then
+        echo "ERROR: Remote installation requires MOD_ARCHIVE_SHA256. Download a versioned release or provide the expected SHA-256."
+        exit 1
+    fi
+    MOD_ARCHIVE_URL="${MOD_ARCHIVE_URL:-https://github.com/kus/cs2-modded-server/archive/${BRANCH}.zip}"
+    case "$MOD_ARCHIVE_URL" in
+        https://github.com/*) ;;
+        *) echo "ERROR: MOD_ARCHIVE_URL must use https://github.com/"; exit 1 ;;
+    esac
+    MOD_DOWNLOAD_DIR=$(mktemp -d)
+    DOWNLOADED_MOD_ROOT="$MOD_DOWNLOAD_DIR"
+    MOD_ARCHIVE="${MOD_DOWNLOAD_DIR}/mod.zip"
+    echo "Downloading checksum-locked mod files..."
+    curl --fail --location --proto '=https' --tlsv1.2 --max-redirs 5 --output "$MOD_ARCHIVE" "$MOD_ARCHIVE_URL"
+    ACTUAL_MOD_SHA256=$(sha256sum "$MOD_ARCHIVE" | awk '{print $1}')
+    if [ "$ACTUAL_MOD_SHA256" != "$MOD_ARCHIVE_SHA256" ]; then
+        echo "ERROR: Mod archive SHA-256 mismatch. Expected $MOD_ARCHIVE_SHA256, got $ACTUAL_MOD_SHA256"
+        rm -rf "$MOD_DOWNLOAD_DIR"
+        exit 1
+    fi
+    unzip -q "$MOD_ARCHIVE" -d "$MOD_DOWNLOAD_DIR/extracted"
+    MOD_ROOT=$(find "$MOD_DOWNLOAD_DIR/extracted" -mindepth 1 -maxdepth 1 -type d -print -quit)
+    if [ -z "$MOD_ROOT" ] || [ ! -f "$MOD_ROOT/dependencies.lock.json" ] || [ ! -f "$MOD_ROOT/scripts/dependency_manager.py" ]; then
+        echo "ERROR: Verified mod archive does not contain the expected release layout."
+        rm -rf "$MOD_DOWNLOAD_DIR"
+        exit 1
+    fi
+fi
 
-# Delete cfg/settings folder as if we remove something later in git it won't get deleted
-rm -r /home/${user}/cs2/game/csgo/cfg/settings
+install -m 0755 "$MOD_ROOT/start.sh" /home/${user}/cs2/start.sh
+install -m 0755 "$MOD_ROOT/stop.sh" /home/${user}/cs2/stop.sh
 
-echo "Downloading mod files..."
-wget --quiet https://github.com/kus/cs2-modded-server/archive/${BRANCH}.zip
-unzip -o -qq ${BRANCH}.zip
 # Delete custom_files_example as I use this for my server and as a demo for others and I want it to always reflect git
 rm -r /home/${user}/cs2/custom_files_example/
-cp -R cs2-modded-server-${BRANCH}/custom_files_example/ /home/${user}/cs2/custom_files_example/
+cp -R "$MOD_ROOT/custom_files_example/" /home/${user}/cs2/custom_files_example/
 # Merge mod files into server files
-cp -R cs2-modded-server-${BRANCH}/game/csgo/ /home/${user}/cs2/game/
+cp -R "$MOD_ROOT/game/csgo/" /home/${user}/cs2/game/
 # Merge custom files into server files
 if [ ! -d "/home/${user}/cs2/custom_files/" ]; then
     # If the target directory doesn't exist, copy the source directory to the target location
-    cp -R cs2-modded-server-${BRANCH}/custom_files/ /home/${user}/cs2/custom_files/
+    cp -R "$MOD_ROOT/custom_files/" /home/${user}/cs2/custom_files/
 else
     # If the target directory exists, copy all the contents of the source directory to the target directory
-    cp -RT cs2-modded-server-${BRANCH}/custom_files/ /home/${user}/cs2/custom_files/
+    cp -RT "$MOD_ROOT/custom_files/" /home/${user}/cs2/custom_files/
 fi
+
+echo "Installing checksum-locked dependencies..."
+python3 "$MOD_ROOT/scripts/dependency_manager.py" validate || exit 1
+python3 "$MOD_ROOT/scripts/dependency_manager.py" install counterstrikesharp \
+    --platform linux-x64 \
+    --variant with-runtime \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo || exit 1
+python3 "$MOD_ROOT/scripts/dependency_manager.py" install cs2-customvotes \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo || exit 1
 
 echo "Merging in custom files from ${CUSTOM_FILES}"
 cp -RT /home/${user}/cs2/${CUSTOM_FILES}/ /home/${user}/cs2/game/csgo/
@@ -330,7 +373,10 @@ else
     echo "$FILE successfully patched for Metamod."
 fi
 
-rm -r /home/${user}/cs2-modded-server-${BRANCH} /home/${user}/${BRANCH}.zip
+if [ -n "$DOWNLOADED_MOD_ROOT" ]; then
+    rm -rf "$DOWNLOADED_MOD_ROOT"
+    DOWNLOADED_MOD_ROOT=""
+fi
 
 # Try to enable unprivileged namespaces
 enable_unprivileged_namespaces

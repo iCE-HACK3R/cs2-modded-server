@@ -1,9 +1,17 @@
 /tools/
 /server/
 /steamcmd/
+.env
 .env copy
 /custom_files/*
 cs2
 tmp
 console.log
 settings.local.json
+.venv/
+__pycache__/
+*.py[cod]
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/

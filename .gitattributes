@@ -1,0 +1,17 @@
+* text=auto
+
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
+
+*.bat text eol=crlf
+*.ini text eol=crlf
+
+*.dll binary
+*.pdb binary
+*.so binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
