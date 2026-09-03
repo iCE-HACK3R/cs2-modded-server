@@ -101,6 +101,18 @@ if exist "%tempFile%" (
 
 :start
 
+:: Refuse to mutate addons while the clean orchestrator is not immutably locked.
+where python >NUL 2>NUL
+if %errorlevel% neq 0 (
+    echo Python 3 is required to verify and install locked dependencies.
+    goto end
+)
+python "%ROOT_DIR%scripts\dependency_manager.py" validate --require gamemode-manager
+if %errorlevel% neq 0 (
+    echo The clean GameModeManager release is not locked yet; refusing to install stale snapshot binaries.
+    goto end
+)
+
 :: Deleting addons folder so no old plugins are left to cause issues
 :: If you have modifications in your addons/ folder they should be in custom_files as these are merged at the end
 echo Deleting addons folder.
@@ -119,19 +131,14 @@ echo Merging Windows specific files.
 xcopy "%ROOT_DIR%game\csgo\addons\windows\*" "%ROOT_DIR%server\game\csgo\" /K /S /E /I /H /Y >NUL
 
 :: Replace snapshot loader/framework files with checksum-locked official assets.
-where python >NUL 2>NUL
-if %errorlevel% neq 0 (
-    echo Python 3 is required to verify and install locked dependencies.
-    goto end
-)
 echo Installing checksum-locked dependencies.
-python "%ROOT_DIR%scripts\dependency_manager.py" validate
-if %errorlevel% neq 0 goto end
 python "%ROOT_DIR%scripts\dependency_manager.py" install metamod-source --platform windows-x64 --variant framework-dependent --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
 if %errorlevel% neq 0 goto end
 python "%ROOT_DIR%scripts\dependency_manager.py" install counterstrikesharp --platform windows-x64 --variant with-runtime --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
 if %errorlevel% neq 0 goto end
 python "%ROOT_DIR%scripts\dependency_manager.py" install cs2-customvotes --platform windows-x64 --variant framework-dependent --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
+if %errorlevel% neq 0 goto end
+python "%ROOT_DIR%scripts\dependency_manager.py" install gamemode-manager --platform windows-x64 --variant framework-dependent --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
 if %errorlevel% neq 0 goto end
 
 :: Merge your custom files in

@@ -7,6 +7,8 @@ import io
 import json
 import re
 import stat
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -22,6 +24,8 @@ SPEC.loader.exec_module(manager)
 LOCK_PATH = Path(__file__).resolve().parents[1] / "dependencies.lock.json"
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "dependencies-lock.schema.json"
 WINDOWS_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "win.bat"
+LINUX_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "install.sh"
+DOCKER_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "install_docker.sh"
 
 
 class DependencyManagerTests(unittest.TestCase):
@@ -31,19 +35,51 @@ class DependencyManagerTests(unittest.TestCase):
     def test_repository_lock_is_valid(self) -> None:
         manager.validate_lock(self.lock)
 
+    def test_unlocked_required_dependency_fails_closed(self) -> None:
+        with self.assertRaisesRegex(manager.DependencyError, "required dependencies are not locked: gamemode-manager"):
+            manager.validate_required_dependencies(self.lock, ["metamod-source", "gamemode-manager"])
+
+        result = subprocess.run(
+            [sys.executable, str(MODULE_PATH), "--lock", str(LOCK_PATH), "validate", "--require", "gamemode-manager"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("required dependencies are not locked: gamemode-manager", result.stderr)
+
     def test_repository_schema_is_valid_json(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
 
     def test_windows_installer_uses_locked_dependencies_before_custom_overlays(self) -> None:
         installer = WINDOWS_INSTALLER_PATH.read_text(encoding="utf-8").lower()
+        readiness = installer.index("validate --require gamemode-manager")
+        destructive_copy = installer.index(":: deleting addons folder")
         metamod_install = installer.index("dependency_manager.py\" install metamod-source")
         css_install = installer.index("dependency_manager.py\" install counterstrikesharp")
         custom_votes_install = installer.index("dependency_manager.py\" install cs2-customvotes")
+        manager_install = installer.index("dependency_manager.py\" install gamemode-manager")
         custom_overlay = installer.index(":: merge your custom files in")
+        self.assertLess(readiness, destructive_copy)
         self.assertLess(metamod_install, css_install)
         self.assertLess(css_install, custom_votes_install)
-        self.assertLess(custom_votes_install, custom_overlay)
+        self.assertLess(custom_votes_install, manager_install)
+        self.assertLess(manager_install, custom_overlay)
+
+    def test_linux_installers_gate_before_snapshot_and_install_locked_orchestrator(self) -> None:
+        for path, snapshot_marker, overlay_marker in (
+            (LINUX_INSTALLER_PATH, "install -m 0755", 'echo "merging in custom files'),
+            (DOCKER_INSTALLER_PATH, 'echo "installing mods"', 'echo "merging in custom files"'),
+        ):
+            with self.subTest(installer=path.name):
+                installer = path.read_text(encoding="utf-8").lower()
+                readiness = installer.index("validate --require gamemode-manager")
+                snapshot_copy = installer.index(snapshot_marker)
+                manager_install = installer.index("install gamemode-manager")
+                custom_overlay = installer.index(overlay_marker)
+                self.assertLess(readiness, snapshot_copy)
+                self.assertLess(manager_install, custom_overlay)
 
     def test_schema_and_runtime_reject_same_unsafe_path_samples(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))

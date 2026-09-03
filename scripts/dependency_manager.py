@@ -185,6 +185,13 @@ def validate_asset(asset: object, hosts: list[str], context: str) -> None:
             raise DependencyError(f"{context}: expected path is outside managed paths: {path}")
 
 
+def validate_required_dependencies(lock: dict[str, Any], required_ids: list[str]) -> None:
+    available = {dependency["id"] for dependency in lock["dependencies"]}
+    missing = sorted(set(required_ids) - available)
+    if missing:
+        raise DependencyError(f"required dependencies are not locked: {', '.join(missing)}")
+
+
 def validate_https_url(value: object, allowed_hosts: list[str], context: str) -> urllib.parse.ParseResult:
     if not isinstance(value, str):
         raise DependencyError(f"{context}: expected HTTPS URL")
@@ -745,7 +752,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lock", type=Path, default=Path(__file__).resolve().parents[1] / "dependencies.lock.json")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("validate", help="validate lock structure and invariants")
+    validate_parser = subparsers.add_parser("validate", help="validate lock structure and invariants")
+    validate_parser.add_argument("--require", action="append", default=[], metavar="DEPENDENCY")
 
     for command in ("fetch", "stage", "install"):
         child = subparsers.add_parser(command)
@@ -766,6 +774,7 @@ def main() -> int:
     try:
         lock = load_lock(args.lock.resolve())
         if args.command == "validate":
+            validate_required_dependencies(lock, args.require)
             print(f"lock valid: {len(lock['dependencies'])} dependencies")
             return 0
         dependency, asset = select_asset(lock, args.dependency, args.platform, args.variant)

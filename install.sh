@@ -312,6 +312,11 @@ else
     fi
 fi
 
+python3 "$MOD_ROOT/scripts/dependency_manager.py" validate --require gamemode-manager || {
+    echo "ERROR: The clean GameModeManager release is not locked yet; refusing to install stale snapshot binaries."
+    exit 1
+}
+
 install -m 0755 "$MOD_ROOT/start.sh" /home/${user}/cs2/start.sh
 install -m 0755 "$MOD_ROOT/stop.sh" /home/${user}/cs2/stop.sh
 
@@ -330,7 +335,6 @@ else
 fi
 
 echo "Installing checksum-locked dependencies..."
-python3 "$MOD_ROOT/scripts/dependency_manager.py" validate || exit 1
 python3 "$MOD_ROOT/scripts/dependency_manager.py" install metamod-source \
     --platform linux-x64 \
     --variant framework-dependent \
@@ -342,6 +346,11 @@ python3 "$MOD_ROOT/scripts/dependency_manager.py" install counterstrikesharp \
     --cache /home/${user}/cs2/.cache/dependencies \
     --target /home/${user}/cs2/game/csgo || exit 1
 python3 "$MOD_ROOT/scripts/dependency_manager.py" install cs2-customvotes \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo || exit 1
+python3 "$MOD_ROOT/scripts/dependency_manager.py" install gamemode-manager \
     --platform linux-x64 \
     --variant framework-dependent \
     --cache /home/${user}/cs2/.cache/dependencies \

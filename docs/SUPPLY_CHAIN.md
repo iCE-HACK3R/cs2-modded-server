@@ -12,6 +12,8 @@ The lock currently covers:
 
 Other plugin binaries still present under `game/csgo` are not yet covered. They remain migration inputs, not provenance-complete release artifacts. Do not describe or publish this branch as production-ready until every advertised mode dependency is either locked and validated or its mode is disabled.
 
+Deployment entry points currently require a `gamemode-manager` lock entry and fail before installing dependencies because the clean 1.0.126 artifact has not yet been published at an immutable URL. This deliberately prevents the stale snapshot binary from being installed or mistaken for 1.0.126. Once the reviewed producer release is published, record its exact URL, byte size, and SHA-256 in the lock before removing this release gate.
+
 ## Validation and staging
 
 The dependency manager uses only the Python standard library:

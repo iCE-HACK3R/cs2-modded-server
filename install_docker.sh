@@ -142,11 +142,15 @@ cp -v /steamcmd/linux64/steamclient.so /home/${user}/.steam/sdk64/steamclient.so
 # https://discord.com/channels/1160907911501991946/1160907912445710479/1417806634503372851
 cp -v /home/${user}/cs2/game/bin/linuxsteamrt64/*.so  /home/${user}/cs2/game/csgo/bin/linuxsteamrt64/
 
+python3 /home/cs2-modded-server/scripts/dependency_manager.py validate --require gamemode-manager || {
+    echo "ERROR: The clean GameModeManager release is not locked yet; refusing to install stale snapshot binaries."
+    exit 1
+}
+
 echo "Installing mods"
 cp -R /home/cs2-modded-server/game/csgo/ /home/${user}/cs2/game/
 
 echo "Installing checksum-locked dependencies"
-python3 /home/cs2-modded-server/scripts/dependency_manager.py validate
 python3 /home/cs2-modded-server/scripts/dependency_manager.py install metamod-source \
     --platform linux-x64 \
     --variant framework-dependent \
@@ -158,6 +162,11 @@ python3 /home/cs2-modded-server/scripts/dependency_manager.py install counterstr
     --cache /home/${user}/cs2/.cache/dependencies \
     --target /home/${user}/cs2/game/csgo
 python3 /home/cs2-modded-server/scripts/dependency_manager.py install cs2-customvotes \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo
+python3 /home/cs2-modded-server/scripts/dependency_manager.py install gamemode-manager \
     --platform linux-x64 \
     --variant framework-dependent \
     --cache /home/${user}/cs2/.cache/dependencies \
