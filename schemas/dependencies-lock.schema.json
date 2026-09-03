@@ -71,7 +71,7 @@
         "url": { "type": "string", "format": "uri", "pattern": "^https://" },
         "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "size": { "type": "integer", "minimum": 1 },
-        "archive": { "const": "zip" },
+        "archive": { "enum": ["zip", "tar.gz"] },
         "expandedSizeLimit": { "type": "integer", "minimum": 1 },
         "expectedPaths": {
           "type": "array",

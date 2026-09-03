@@ -147,6 +147,11 @@ cp -R /home/cs2-modded-server/game/csgo/ /home/${user}/cs2/game/
 
 echo "Installing checksum-locked dependencies"
 python3 /home/cs2-modded-server/scripts/dependency_manager.py validate
+python3 /home/cs2-modded-server/scripts/dependency_manager.py install metamod-source \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo
 python3 /home/cs2-modded-server/scripts/dependency_manager.py install counterstrikesharp \
     --platform linux-x64 \
     --variant with-runtime \

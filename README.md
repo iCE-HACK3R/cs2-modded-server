@@ -99,7 +99,7 @@ Getting up and running:
 
 | Mod                                                                                   | Version           | Why                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Metamod:Source](https://www.metamodsource.net/downloads.php?branch=dev)              | `2.0.0-1410`      | Sits between the Game and the Engine, and allows plugins to intercept calls that flow between                                                                                                              |
+| [Metamod:Source](https://www.metamodsource.net/downloads.php?branch=dev)              | `2.0.0.1411`      | Sits between the Game and the Engine, and allows plugins to intercept calls that flow between                                                                                                              |
 | [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)                | `1.0.373`         | Attempts to implement a .NET Core scripting layer on top of a Metamod Source Plugin, allowing developers to create plugins that interact with the game server in a modern language (C#)                    |
 | [MultiAddonManager](https://github.com/Source2ZE/MultiAddonManager)                   | `1.5.4`           | Allows you to use multiple workshop addons at once and have clients download them [How?](#i-want-to-permanently-enable-multi-addon-manager)                                                                |
 | [ServerListPlayersFix](https://github.com/Source2ZE/ServerListPlayersFix)             | `1.0.8`           | Fixes players not showing up in the server browser                                                                                                                                                         |
@@ -791,7 +791,7 @@ Because the way the server is setup with several mods it's not possible. You can
 
 If you are on a unix based system, you can run `scripts/check-updates.sh` which will check the current versions of each plugin installed in this repo vs what the latest is, this makes it easier than going through each one manually.
 
-Go to the Releases page for [Metamod:Source](http://www.sourcemm.net/downloads.php?branch=master) and [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) and download the latest. You need to merge the `addons` folder from the zips into the `/game/csgo/addons` of this repo. This is easy to do with unix based systems with rsync:
+Use the repository's checksum-locked dependency manager described in [Dependency supply chain](docs/SUPPLY_CHAIN.md), rather than recursively merging release archives. CS2 requires Metamod:Source's [2.0 development release line](https://www.metamodsource.net/downloads.php?branch=dev); the separate 1.12 line is not the CS2 loader tracked by this distribution. CounterStrikeSharp must be upgraded atomically with its API, native loader, gamedata, and optional runtime.
 
 First open terminal and `cd` into the folder where you unzipped the zips i.e.: `cd ~/Downloads` then update the command below with the full path to the repo and run it:
 

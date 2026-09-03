@@ -12,6 +12,8 @@ settings.local.json
 __pycache__/
 *.py[cod]
 .cache/
+.stage/
+.install-check/
 .pytest_cache/
 .coverage
 htmlcov/

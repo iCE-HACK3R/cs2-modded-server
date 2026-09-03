@@ -331,6 +331,11 @@ fi
 
 echo "Installing checksum-locked dependencies..."
 python3 "$MOD_ROOT/scripts/dependency_manager.py" validate || exit 1
+python3 "$MOD_ROOT/scripts/dependency_manager.py" install metamod-source \
+    --platform linux-x64 \
+    --variant framework-dependent \
+    --cache /home/${user}/cs2/.cache/dependencies \
+    --target /home/${user}/cs2/game/csgo || exit 1
 python3 "$MOD_ROOT/scripts/dependency_manager.py" install counterstrikesharp \
     --platform linux-x64 \
     --variant with-runtime \

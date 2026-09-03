@@ -3,9 +3,11 @@ from __future__ import annotations
 import copy
 import hashlib
 import importlib.util
+import io
 import json
 import re
 import stat
+import tarfile
 import tempfile
 import unittest
 import zipfile
@@ -19,6 +21,7 @@ manager = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(manager)
 LOCK_PATH = Path(__file__).resolve().parents[1] / "dependencies.lock.json"
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "dependencies-lock.schema.json"
+WINDOWS_INSTALLER_PATH = Path(__file__).resolve().parents[1] / "win.bat"
 
 
 class DependencyManagerTests(unittest.TestCase):
@@ -31,6 +34,16 @@ class DependencyManagerTests(unittest.TestCase):
     def test_repository_schema_is_valid_json(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
+    def test_windows_installer_uses_locked_dependencies_before_custom_overlays(self) -> None:
+        installer = WINDOWS_INSTALLER_PATH.read_text(encoding="utf-8").lower()
+        metamod_install = installer.index("dependency_manager.py\" install metamod-source")
+        css_install = installer.index("dependency_manager.py\" install counterstrikesharp")
+        custom_votes_install = installer.index("dependency_manager.py\" install cs2-customvotes")
+        custom_overlay = installer.index(":: merge your custom files in")
+        self.assertLess(metamod_install, css_install)
+        self.assertLess(css_install, custom_votes_install)
+        self.assertLess(custom_votes_install, custom_overlay)
 
     def test_schema_and_runtime_reject_same_unsafe_path_samples(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -56,19 +69,22 @@ class DependencyManagerTests(unittest.TestCase):
 
     def test_duplicate_platform_variant_is_rejected(self) -> None:
         candidate = copy.deepcopy(self.lock)
-        candidate["dependencies"][0]["assets"].append(copy.deepcopy(candidate["dependencies"][0]["assets"][0]))
+        dependency = next(item for item in candidate["dependencies"] if item["id"] == "counterstrikesharp")
+        dependency["assets"].append(copy.deepcopy(dependency["assets"][0]))
         with self.assertRaisesRegex(manager.DependencyError, "duplicate platform/variant"):
             manager.validate_lock(candidate)
 
     def test_seed_managed_overlap_is_rejected(self) -> None:
         candidate = copy.deepcopy(self.lock)
-        candidate["dependencies"][0]["assets"][0]["seedPaths"] = ["addons/counterstrikesharp/api/seed.json"]
+        dependency = next(item for item in candidate["dependencies"] if item["id"] == "counterstrikesharp")
+        dependency["assets"][0]["seedPaths"] = ["addons/counterstrikesharp/api/seed.json"]
         with self.assertRaisesRegex(manager.DependencyError, "seed path overlaps managed path"):
             manager.validate_lock(candidate)
 
     def test_overlapping_managed_paths_are_rejected(self) -> None:
         candidate = copy.deepcopy(self.lock)
-        candidate["dependencies"][0]["assets"][0]["managedPaths"] = [
+        dependency = next(item for item in candidate["dependencies"] if item["id"] == "counterstrikesharp")
+        dependency["assets"][0]["managedPaths"] = [
             "addons/counterstrikesharp/api",
             "addons/counterstrikesharp/api/CounterStrikeSharp.API.dll",
         ]
@@ -79,7 +95,8 @@ class DependencyManagerTests(unittest.TestCase):
         for unsafe in (".", "addons//plugin", "addons/./plugin", "addons/plugin.", "addons/CON", "addons/file:name"):
             with self.subTest(path=unsafe):
                 candidate = copy.deepcopy(self.lock)
-                candidate["dependencies"][0]["assets"][0]["managedPaths"] = [unsafe]
+                dependency = next(item for item in candidate["dependencies"] if item["id"] == "counterstrikesharp")
+                dependency["assets"][0]["managedPaths"] = [unsafe]
                 with self.assertRaisesRegex(manager.DependencyError, "normalized, relative POSIX paths"):
                     manager.validate_lock(candidate)
 
@@ -113,6 +130,41 @@ class DependencyManagerTests(unittest.TestCase):
                 output.writestr("large.bin", b"x" * 1025)
             with self.assertRaisesRegex(manager.DependencyError, "expanded size limit"):
                 manager.safe_extract(archive, root / "out", 1024)
+
+    def test_tar_gz_traversal_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / "bad.tar.gz"
+            with tarfile.open(archive, "w:gz") as output:
+                info = tarfile.TarInfo("../escape.txt")
+                info.size = 3
+                output.addfile(info, io.BytesIO(b"bad"))
+            with self.assertRaisesRegex(manager.DependencyError, "unsafe archive path"):
+                manager.safe_extract(archive, root / "out", 1024, "tar.gz")
+            self.assertFalse((root / "escape.txt").exists())
+
+    def test_tar_gz_link_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / "link.tar.gz"
+            with tarfile.open(archive, "w:gz") as output:
+                info = tarfile.TarInfo("link")
+                info.type = tarfile.SYMTYPE
+                info.linkname = "target"
+                output.addfile(info)
+            with self.assertRaisesRegex(manager.DependencyError, "links/devices"):
+                manager.safe_extract(archive, root / "out", 1024, "tar.gz")
+
+    def test_tar_gz_expanded_size_limit_is_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / "large.tar.gz"
+            with tarfile.open(archive, "w:gz") as output:
+                info = tarfile.TarInfo("large.bin")
+                info.size = 1025
+                output.addfile(info, io.BytesIO(b"x" * 1025))
+            with self.assertRaisesRegex(manager.DependencyError, "expanded size limit"):
+                manager.safe_extract(archive, root / "out", 1024, "tar.gz")
 
     def test_checksum_mismatch_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -339,6 +391,7 @@ class DependencyManagerTests(unittest.TestCase):
         asset = {
             "size": len(payload),
             "sha256": hashlib.sha256(payload).hexdigest(),
+            "archive": "zip",
             "expandedSizeLimit": 4096,
             "expectedPaths": expected_paths,
             "managedPaths": managed_paths,

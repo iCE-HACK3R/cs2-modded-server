@@ -49,6 +49,29 @@ jobs:
       - name: Validate dependency lock
         run: python scripts/dependency_manager.py validate
 
+      - name: Fetch and stage Metamod Source
+        shell: bash
+        run: |
+          python scripts/dependency_manager.py stage metamod-source \
+            --platform "${{ matrix.platform }}" \
+            --variant framework-dependent \
+            --cache .cache/dependencies \
+            --output .stage/metamod-source
+
+      - name: Test transactional Metamod install
+        shell: bash
+        run: |
+          mkdir -p .install-target/addons/metamod/bin .install-target/addons/metamod
+          printf 'stale' > .install-target/addons/metamod/bin/stale-loader
+          printf 'operator-owned\n' > .install-target/addons/metamod/metaplugins.ini
+          python scripts/dependency_manager.py install metamod-source \
+            --platform "${{ matrix.platform }}" \
+            --variant framework-dependent \
+            --cache .cache/dependencies \
+            --target .install-target
+          test ! -e .install-target/addons/metamod/bin/stale-loader
+          test "$(cat .install-target/addons/metamod/metaplugins.ini)" = "operator-owned"
+
       - name: Fetch and stage CounterStrikeSharp
         shell: bash
         run: |

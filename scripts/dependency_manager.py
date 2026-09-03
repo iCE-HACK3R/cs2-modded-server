@@ -11,6 +11,7 @@ import os
 import shutil
 import stat
 import sys
+import tarfile
 import tempfile
 import urllib.error
 import urllib.parse
@@ -21,6 +22,7 @@ from typing import Any
 
 CHUNK_SIZE = 1024 * 1024
 MAX_REDIRECTS = 5
+MAX_ARCHIVE_ENTRIES = 10_000
 WINDOWS_RESERVED_NAMES = {
     "con", "prn", "aux", "nul",
     *(f"com{index}" for index in range(1, 10)),
@@ -164,8 +166,8 @@ def validate_asset(asset: object, hosts: list[str], context: str) -> None:
     for field in ("size", "expandedSizeLimit"):
         if not isinstance(asset[field], int) or isinstance(asset[field], bool) or asset[field] < 1:
             raise DependencyError(f"{context}.{field}: expected positive integer")
-    if asset["archive"] != "zip":
-        raise DependencyError(f"{context}.archive: only zip is supported")
+    if asset["archive"] not in ("zip", "tar.gz"):
+        raise DependencyError(f"{context}.archive: supported values are zip and tar.gz")
     expected = validate_paths(asset["expectedPaths"], f"{context}.expectedPaths")
     managed = validate_paths(asset["managedPaths"], f"{context}.managedPaths")
     seeds = validate_paths(asset["seedPaths"], f"{context}.seedPaths", allow_empty=True)
@@ -284,36 +286,82 @@ def fetch_asset(lock: dict[str, Any], dependency: dict[str, Any], asset: dict[st
             temporary.unlink(missing_ok=True)
 
 
-def safe_extract(archive: Path, destination: Path, expanded_size_limit: int) -> None:
-    destination.mkdir(parents=True, exist_ok=False)
+def safe_extract_zip(archive: Path, destination: Path, expanded_size_limit: int) -> None:
     total_size = 0
+    with zipfile.ZipFile(archive) as source:
+        members = source.infolist()
+        if len(members) > MAX_ARCHIVE_ENTRIES:
+            raise DependencyError(f"archive exceeds entry limit of {MAX_ARCHIVE_ENTRIES}")
+        for info in members:
+            name = info.filename.rstrip("/")
+            if not name:
+                continue
+            if not is_safe_relative_path(name):
+                raise DependencyError(f"unsafe archive path: {info.filename!r}")
+            mode = (info.external_attr >> 16) & 0xFFFF
+            file_type = stat.S_IFMT(mode)
+            if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
+                raise DependencyError(f"archive links/devices are not allowed: {info.filename}")
+            total_size += info.file_size
+            if total_size > expanded_size_limit:
+                raise DependencyError(f"archive exceeds expanded size limit of {expanded_size_limit} bytes")
+            target = destination.joinpath(*PurePosixPath(name).parts)
+            if info.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with source.open(info, "r") as input_stream, target.open("xb") as output_stream:
+                shutil.copyfileobj(input_stream, output_stream, CHUNK_SIZE)
+            if mode & 0o111:
+                target.chmod(target.stat().st_mode | 0o111)
+
+
+def safe_extract_tar_gz(archive: Path, destination: Path, expanded_size_limit: int) -> None:
+    total_size = 0
+    with tarfile.open(archive, mode="r:gz") as source:
+        members = source.getmembers()
+        if len(members) > MAX_ARCHIVE_ENTRIES:
+            raise DependencyError(f"archive exceeds entry limit of {MAX_ARCHIVE_ENTRIES}")
+        for info in members:
+            name = info.name.rstrip("/")
+            if not name:
+                continue
+            if not is_safe_relative_path(name):
+                raise DependencyError(f"unsafe archive path: {info.name!r}")
+            if not (info.isfile() or info.isdir()):
+                raise DependencyError(f"archive links/devices are not allowed: {info.name}")
+            total_size += info.size
+            if total_size > expanded_size_limit:
+                raise DependencyError(f"archive exceeds expanded size limit of {expanded_size_limit} bytes")
+            target = destination.joinpath(*PurePosixPath(name).parts)
+            if info.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            input_stream = source.extractfile(info)
+            if input_stream is None:
+                raise DependencyError(f"cannot read archive member: {info.name}")
+            with input_stream, target.open("xb") as output_stream:
+                shutil.copyfileobj(input_stream, output_stream, CHUNK_SIZE)
+            if info.mode & 0o111:
+                target.chmod(target.stat().st_mode | 0o111)
+
+
+def safe_extract(archive: Path, destination: Path, expanded_size_limit: int, archive_type: str = "zip") -> None:
+    destination.mkdir(parents=True, exist_ok=False)
     try:
-        with zipfile.ZipFile(archive) as source:
-            for info in source.infolist():
-                name = info.filename.rstrip("/")
-                if not name:
-                    continue
-                if not is_safe_relative_path(name):
-                    raise DependencyError(f"unsafe archive path: {info.filename!r}")
-                mode = (info.external_attr >> 16) & 0xFFFF
-                file_type = stat.S_IFMT(mode)
-                if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
-                    raise DependencyError(f"archive links/devices are not allowed: {info.filename}")
-                total_size += info.file_size
-                if total_size > expanded_size_limit:
-                    raise DependencyError(f"archive exceeds expanded size limit of {expanded_size_limit} bytes")
-                target = destination.joinpath(*PurePosixPath(name).parts)
-                if info.is_dir():
-                    target.mkdir(parents=True, exist_ok=True)
-                    continue
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with source.open(info, "r") as input_stream, target.open("xb") as output_stream:
-                    shutil.copyfileobj(input_stream, output_stream, CHUNK_SIZE)
-                if mode & 0o111:
-                    target.chmod(target.stat().st_mode | 0o111)
-    except Exception:
+        if archive_type == "zip":
+            safe_extract_zip(archive, destination, expanded_size_limit)
+        elif archive_type == "tar.gz":
+            safe_extract_tar_gz(archive, destination, expanded_size_limit)
+        else:
+            raise DependencyError(f"unsupported archive type: {archive_type}")
+    except DependencyError:
         shutil.rmtree(destination, ignore_errors=True)
         raise
+    except (OSError, zipfile.BadZipFile, tarfile.TarError) as exc:
+        shutil.rmtree(destination, ignore_errors=True)
+        raise DependencyError(f"invalid {archive_type} archive: {exc}") from exc
 
 
 def validate_layout(extracted: Path, asset: dict[str, Any]) -> None:
@@ -332,7 +380,7 @@ def stage_asset(archive: Path, destination: Path, asset: dict[str, Any]) -> None
     verify_archive(archive, asset)
     if destination.exists():
         raise DependencyError(f"stage destination already exists: {destination}")
-    safe_extract(archive, destination, asset["expandedSizeLimit"])
+    safe_extract(archive, destination, asset["expandedSizeLimit"], asset["archive"])
     try:
         validate_layout(destination, asset)
     except Exception:

@@ -68,7 +68,7 @@ if %errorlevel%==0 (
         set "line=%%a"
         setlocal enabledelayedexpansion
         set "line=!line:*:=!"
-        if "!line!" neq "" ( 
+        if "!line!" neq "" (
             if "!line!"=="!line:%insertAfter%=!" (
                 echo(!line!
             ) else (
@@ -117,6 +117,22 @@ xcopy "%ROOT_DIR%game\csgo\*" "%ROOT_DIR%server\game\csgo\" /K /S /E /I /H /Y >N
 :: Merge Windows specific files
 echo Merging Windows specific files.
 xcopy "%ROOT_DIR%game\csgo\addons\windows\*" "%ROOT_DIR%server\game\csgo\" /K /S /E /I /H /Y >NUL
+
+:: Replace snapshot loader/framework files with checksum-locked official assets.
+where python >NUL 2>NUL
+if %errorlevel% neq 0 (
+    echo Python 3 is required to verify and install locked dependencies.
+    goto end
+)
+echo Installing checksum-locked dependencies.
+python "%ROOT_DIR%scripts\dependency_manager.py" validate
+if %errorlevel% neq 0 goto end
+python "%ROOT_DIR%scripts\dependency_manager.py" install metamod-source --platform windows-x64 --variant framework-dependent --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
+if %errorlevel% neq 0 goto end
+python "%ROOT_DIR%scripts\dependency_manager.py" install counterstrikesharp --platform windows-x64 --variant with-runtime --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
+if %errorlevel% neq 0 goto end
+python "%ROOT_DIR%scripts\dependency_manager.py" install cs2-customvotes --platform windows-x64 --variant framework-dependent --cache "%ROOT_DIR%.cache\dependencies" --target "%ROOT_DIR%server\game\csgo"
+if %errorlevel% neq 0 goto end
 
 :: Merge your custom files in
 echo Copying custom files from "%custom_folder%".

@@ -8,6 +8,69 @@
   ],
   "dependencies": [
     {
+      "id": "metamod-source",
+      "name": "Metamod:Source",
+      "version": "2.0.0.1411",
+      "upstream": "https://github.com/alliedmodders/metamod-source",
+      "license": {
+        "spdx": "Zlib",
+        "url": "https://github.com/alliedmodders/metamod-source/blob/2.0.0.1411/LICENSE.txt",
+        "notice": "Copyright (C) 2004-2008 Metamod:Source Development Team; preserve the upstream zlib/libpng license notice in source distributions. Version 2.0.0.1411 is an upstream pre-release from the CS2-capable 2.0 line."
+      },
+      "required": true,
+      "modes": ["all"],
+      "assets": [
+        {
+          "platform": "linux-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1411/mmsource-2.0.0-git1411-linux.tar.gz",
+          "sha256": "e3d4c3d457a1c86a5079e8bd8248a4a00361c7d0a3dce7c7e0c4c45458096649",
+          "size": 7276310,
+          "archive": "tar.gz",
+          "expandedSizeLimit": 67108864,
+          "expectedPaths": [
+            "addons/metamod/bin/linuxsteamrt64/metamod.2.cs2.so",
+            "addons/metamod/bin/linuxsteamrt64/libserver.so",
+            "addons/metamod.vdf",
+            "addons/metamod_x64.vdf"
+          ],
+          "managedPaths": [
+            "addons/metamod/bin",
+            "addons/metamod/README.txt",
+            "addons/metamod.vdf",
+            "addons/metamod_x64.vdf"
+          ],
+          "seedPaths": [
+            "addons/metamod/metaplugins.ini"
+          ]
+        },
+        {
+          "platform": "windows-x64",
+          "variant": "framework-dependent",
+          "url": "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1411/mmsource-2.0.0-git1411-windows.zip",
+          "sha256": "d29a4aa23144b2a073a09f05efd1b6b1613f4a284ef76f7be7e28feae0f1c07e",
+          "size": 7143984,
+          "archive": "zip",
+          "expandedSizeLimit": 67108864,
+          "expectedPaths": [
+            "addons/metamod/bin/win64/metamod.2.cs2.dll",
+            "addons/metamod/bin/win64/server.dll",
+            "addons/metamod.vdf",
+            "addons/metamod_x64.vdf"
+          ],
+          "managedPaths": [
+            "addons/metamod/bin",
+            "addons/metamod/README.txt",
+            "addons/metamod.vdf",
+            "addons/metamod_x64.vdf"
+          ],
+          "seedPaths": [
+            "addons/metamod/metaplugins.ini"
+          ]
+        }
+      ]
+    },
+    {
       "id": "counterstrikesharp",
       "name": "CounterStrikeSharp",
       "version": "1.0.373",

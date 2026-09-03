@@ -6,6 +6,7 @@ The release branch installs external components from `dependencies.lock.json`. T
 
 The lock currently covers:
 
+- Metamod:Source 2.0.0.1411 for Linux and Windows. This is an upstream pre-release from the CS2-capable 2.0 line; the separate 1.12 line does not provide the CS2 loader payload used here.
 - CounterStrikeSharp 1.0.373 for Linux and Windows, with and without the bundled .NET 10 runtime.
 - CS2-CustomVotes 1.1.4 for Linux and Windows.
 
@@ -23,7 +24,7 @@ python3 scripts/dependency_manager.py stage counterstrikesharp --platform linux-
 
 `fetch` accepts HTTPS URLs from the lock's allowlist only, follows at most five allowlisted HTTPS redirects, enforces the locked byte count while streaming, and verifies SHA-256 before making a cache entry visible.
 
-`stage` rejects absolute paths, parent traversal, backslashes, links, devices, duplicate output files, missing expected files, and archives over the expanded-size limit.
+`stage` accepts locked ZIP and gzip-compressed TAR assets. It rejects absolute paths, parent traversal, backslashes, links, devices, duplicate output files, excessive entry counts, missing expected files, and archives over the expanded-size limit.
 
 ## Transactional installation
 
@@ -52,6 +53,8 @@ The CounterStrikeSharp dependency transaction deliberately does not manage:
 
 Core API/native/gamedata/runtime paths are replaced as one rollback-capable transaction. Config examples are seeded only when absent. Custom files are merged after locked dependencies so explicit operator overrides remain authoritative.
 
+Metamod's `bin` directory, loader VDFs, and packaged README are manager-owned. `addons/metamod/metaplugins.ini` is seed-only: an existing operator plugin list is preserved.
+
 The historical distribution overlay that runs before dependency installation still uses recursive copies and can overwrite files that it owns. Its remaining plugin/config trees are not covered by the guarantees above. Ownership-aware migration and stale-file cleanup remain release blockers.
 
 ## Remote distribution archives
@@ -65,7 +68,7 @@ A remote mutable branch archive without a supplied digest is rejected. Versioned
 
 ## Updating a lock entry
 
-1. Select an official stable release and review its license.
+1. Select the correct official release line for the target game, record prerelease status when applicable, and review its license.
 2. Record the exact release asset URL, upstream-provided or independently verified digest, and byte size.
 3. Inspect the archive and define the smallest correct managed boundary.
 4. Add expected paths that prove native, API, runtime, and/or plugin payload identity.
